@@ -1,0 +1,67 @@
+---
+tags:
+  - Title
+  - Description
+  - PhotoTakenTime
+  - CreationTime
+  - ImageViews
+  - URL
+  - GeoData
+  - GeoDataExif
+  - GooglePhotosOrigin
+  - Archived
+  - Favorited
+extension:
+  # Images
+  - 3FR
+  # - ARI (not exif?)
+  - ARW
+  - AVIF
+  # - CAP (not exif?)
+  # - CIN (not exif?)
+  - CR2
+  - CR3
+  - CRW
+  - DCR
+  - DNG
+  - ERF
+  - FFF
+  - GIF
+  - HEIC
+  - HEIF
+  - IIQ
+  - INSP
+  - JPEG
+  - JPG
+  - JXL
+  - K25
+  - KDC
+  - MRW
+  - NEF
+  - ORF
+  - ORI
+  - PEF
+  - PNG
+  - RAF
+  - RAW
+  - RWL
+  - SR2
+  - SRF
+  - SRW
+  - TIF
+  - TIFF
+  - WEBP
+  - X3F
+  # Videos
+  - 3GP
+  - AVI
+  - FLV
+  - INSV
+  - M2TS
+  - MKV
+  - MOV
+  - MP4
+  - MPG
+  - MTS
+  - WEBM
+  - WMV

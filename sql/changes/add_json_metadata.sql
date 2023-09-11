@@ -1,0 +1,2 @@
+INSERT INTO json_metadata (file_id, title, description, imageviews, creationtime, phototakentime, geodata, geodataexif, url, archived, favorited, googlephotosorigin)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);

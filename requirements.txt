@@ -1,0 +1,7 @@
+opencv-python~=4.8.0.74
+scikit-image~=0.21.0
+psycopg2~=2.9.7
+PyExifTool~=0.5.5
+pyyaml~=6.0.1
+pytz~=2023.3
+xmltodict~=0.13.0
