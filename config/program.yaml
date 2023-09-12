@@ -1,0 +1,88 @@
+---
+tags:
+  - CreationTimeFormatted
+  - DateCreated
+  - DateTimeOriginal
+  - GPSAltitude
+  - GPSAreaInformation
+  - GPSDateTime
+  - GPSDOP
+  - GPSLatitude
+  - GPSLongitude
+  - GPSProcessingMethod
+  - ImageDescription
+  - ImageHeight
+  - ImageWidth
+  - LensModel
+  - MetadataDate
+  - Make
+  - Model
+  - Orientation
+  - PhotoTakenTimeFormatted
+  - PhotoTakenTimeTimestamp
+  - Software
+  - State
+  - City
+  - Country
+  - TimeStamp
+  - YCbCrSubSampling
+extensions:
+  # Images
+  - 3FR
+  # - ARI (not exif?)
+  - ARW
+  - AVIF
+  # - CAP (not exif?)
+  # - CIN (not exif?)
+  - CR2
+  - CR3
+  - CRW
+  - DCR
+  - DNG
+  - ERF
+  - FFF
+  - GIF
+  - HEIC
+  - HEIF
+  - IIQ
+  - INSP
+  - JPEG
+  - JPG
+  - JXL
+  - K25
+  - KDC
+  - MRW
+  - NEF
+  - ORF
+  - ORI
+  - PEF
+  - PNG
+  - RAF
+  - RAW
+  - RWL
+  - SR2
+  - SRF
+  - SRW
+  - TIF
+  - TIFF
+  - WEBP
+  - X3F
+  # Videos
+  - 3GP
+  - AVI
+  - FLV
+  - INSV
+  - M2TS
+  - MKV
+  - MOV
+  - MP4
+  - MPG
+  - MTS
+  - WEBM
+  - WMV
+tz_map:
+  AUSTRALIA/WESTERN AUSTRALIA: Australia/West
+  AUSTRALIA/QUEENSLAND: Australia/Queensland
+  AUSTRALIA/NEW SOUTH WALES: Australia/NSW
+  SINGAPORE: Singapore
+  NEW ZEALAND/WELLINGTON: NZ

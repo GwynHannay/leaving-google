@@ -2,19 +2,16 @@ import os
 from helpers import files, metadata, setup, sqlitedb, utils
 
 
-photos_dir = setup.get_from_config("google_location")
-edits_dir = setup.get_from_config("edited_location")
-mp_dir = setup.get_from_config("mp_location")
+photos_dir = setup.get_from_settings("google_location")
+edits_dir = setup.get_from_settings("edited_location")
+mp_dir = setup.get_from_settings("mp_location")
 
 
 def check_db():
-    db_file = "".join([setup.get_from_config("db_name"), ".db"])
+    db_file = "".join([setup.get_from_settings("db_name"), ".db"])
     if not os.path.exists(db_file):
         print("Creating SQLite database and tables")
-
-        conn = sqlitedb.start_query()
-        sqlitedb.create_db(conn)
-        sqlitedb.end_query(conn)
+        sqlitedb.create_db()
 
 
 def index_takeout_files():
@@ -25,17 +22,13 @@ def index_takeout_files():
     for zippy in zip_files:
         db_records.append((zippy.name, zippy.path, zippy.stat().st_size))
 
-    conn = sqlitedb.start_query()
-    sqlitedb.insert_many_records("add_takeout_files", db_records, conn)
-    sqlitedb.end_query(conn)
+    sqlitedb.insert_many("add_takeout_files", db_records)
 
 
 def index_raw_files():
     index_folders()
     db_records = list()
-    conn = sqlitedb.start_query()
-    folders = sqlitedb.get_all_results("get_unlisted_folders", conn)
-    sqlitedb.end_query(conn)
+    folders = sqlitedb.get_all_results("get_unlisted_folders")
 
     insert_sql_file = "add_filelist"
     for id, folder in folders:
@@ -51,9 +44,7 @@ def index_raw_files():
 
 
 def index_xmp_files():
-    conn = sqlitedb.start_query()
-    folders = sqlitedb.get_all_results("get_all_folders", conn)
-    sqlitedb.end_query(conn)
+    folders = sqlitedb.get_all_results("get_all_folders")
 
     for id, folder in folders:
         db_records = list()
@@ -77,9 +68,7 @@ def index_folders():
         filepaths = [(os.path.join(entry[0], folder),) for folder in entry[1]]
         db_records.extend(filepaths)
 
-    conn = sqlitedb.start_query()
-    sqlitedb.insert_many_records("add_folders", db_records, conn)
-    sqlitedb.end_query(conn)
+    sqlitedb.insert_many("add_folders", db_records)
 
 
 def index_filesystem():
@@ -87,11 +76,12 @@ def index_filesystem():
 
 
 def process_takeout_files():
+    takeout_files = sqlitedb.get_all_results("get_takeout_files")
     conn = sqlitedb.start_query()
-    for id, zip_file in sqlitedb.get_all_results("get_takeout_files", conn):
+    for id, zip_file in takeout_files:
         print(f"On file: {zip_file}")
         files.extract_files(zip_file)
-        sqlitedb.execute_query_with_single_val("update_unzipped_status", (id,), conn)
+        sqlitedb.execute_with_val_during_batch("update_unzipped_status", id, conn)
     sqlitedb.end_query(conn)
 
 
@@ -104,10 +94,8 @@ def process_raw_files():
     utils.clean_up_filelist()
 
     print("Begin matching JSON files to original media")
-    conn = sqlitedb.start_query()
-    sqlitedb.execute_query("add_json_files", conn)
-    sqlitedb.execute_query("add_json_no_ext", conn)
-    sqlitedb.end_query(conn)
+    sqlitedb.execute_query("add_json_files")
+    sqlitedb.execute_query("add_json_no_ext")
 
     utils.clean_up_filelist()
     print("Restructure filenames to find missing JSON matches")
@@ -115,9 +103,7 @@ def process_raw_files():
     utils.clean_up_filelist()
 
     print("Read remaining JSON files to find matches")
-    conn = sqlitedb.start_query()
-    sqlitedb.execute_query("add_json_cropped", conn)
-    sqlitedb.end_query(conn)
+    sqlitedb.execute_query("add_json_cropped")
     utils.clean_up_filelist()
 
     print("Creating first XMP files")
@@ -132,9 +118,7 @@ def process_metadata_files():
     metadata.update_xmp_files()
 
     print("Deleting original XMP files")
-    conn = sqlitedb.start_query()
-    folders = sqlitedb.get_all_results("get_all_folders", conn)
-    sqlitedb.end_query(conn)
+    folders = sqlitedb.get_all_results("get_all_folders")
 
     for id, folder in folders:
         old_xmps = [
@@ -146,72 +130,68 @@ def process_metadata_files():
 
 
 def process_edited_files():
-    conn = sqlitedb.start_query()
-    for records in sqlitedb.get_batched_results("get_edits", conn):
+    for records, conn in sqlitedb.batch_updates("get_edits"):
         db_records = None
         db_records = list()
         filepaths = None
         filepaths = list()
+
         for id, old_filepath in records:
             new_filepath = old_filepath.replace(photos_dir, edits_dir)
             filepaths.append((old_filepath, new_filepath))
             db_records.append(id)
+
         files.move_files(filepaths)
-        sqlitedb.execute_query_with_list("add_filelist_edits", db_records, conn)
-    sqlitedb.end_query(conn)
+        sqlitedb.execute_list_during_batch("add_filelist_edits", db_records, conn)
 
 
 def process_mp_files():
-    db_records = list()
-    conn = sqlitedb.start_query()
     i = 0
-    for records in sqlitedb.get_batched_results("get_mp_files", conn):
+    for records, conn in sqlitedb.batch_updates("get_mp_files"):
+        db_records = None
         filepaths = None
+        db_records = list()
         filepaths = list()
         i = i + 1
-        print(f"Moving batch {i}")
+
         for id, old_filepath in records:
             new_filepath = old_filepath.replace(photos_dir, mp_dir)
             filepaths.append((old_filepath, new_filepath))
             db_records.append(id)
-        print(f"Moving files: {filepaths}")
+            
+        print(f"Moving batch {i}")
         files.move_files(filepaths)
-    sqlitedb.execute_query_with_list("add_filelist_mp", db_records, conn)
-    sqlitedb.end_query(conn)
+        sqlitedb.execute_list_during_batch("add_filelist_mp", db_records, conn)
 
 
 def process_unmatched_json():
-    conn = sqlitedb.start_query()
-    for records in sqlitedb.get_batched_results("json_no_media", conn):
+    for records, conn in sqlitedb.batch_updates("json_no_media"):
         db_records = None
         db_records = list()
+
         for id, filepath in records:
             result = metadata.read_filename(filepath)
             db_records.append((result, id))
-        sqlitedb.execute_many_with_many_vals("add_more_json_files", db_records, conn)
-    sqlitedb.end_query(conn)
+
+        sqlitedb.execute_many_during_batch("add_more_json_files", db_records, conn)
 
 
 def process_parantheses():
-    conn = sqlitedb.start_query()
-    for records in sqlitedb.get_batched_results("media_paranthesis", conn):
+    for records, conn in sqlitedb.batch_updates("media_paranthesis"):
         db_records = None
         db_records = list()
         for id, folder, filename in records:
             new_filename = utils.restructure_filename(filename)
             db_records.append((id, new_filename, folder))
-        sqlitedb.execute_many_with_many_vals("add_matching_json", db_records, conn)
-    sqlitedb.end_query(conn)
+        sqlitedb.execute_many_during_batch("add_matching_json", db_records, conn)
 
 
 def process_dates():
-    # conn = sqlitedb.start_query()
-    # for records in sqlitedb.get_batched_results("get_xmp_files", conn):
+    # for records, conn in sqlitedb.batch_updates("get_xmp_files"):
     #     db_records = None
     #     db_records = list()
     #     for id, filepath in records:
     #         for sec in metadata.get_rdf_sections(filepath):
     #             db_records.append((id, str(sec)))
-    #     sqlitedb.insert_many_records("add_xmp_data", db_records, conn)
-    # sqlitedb.end_query(conn)
+    #     sqlitedb.insert_during_batch("add_xmp_data", db_records, conn)
     metadata.get_tags()

@@ -4,8 +4,8 @@ import zipfile
 from helpers import setup
 
 
-photos_dir = setup.get_from_config("google_location")
-working_dir = setup.get_from_config("working_location")
+photos_dir = setup.get_from_settings("google_location")
+working_dir = setup.get_from_settings("working_location")
 
 
 def get_files(dir_name: str, extensions: list | None):

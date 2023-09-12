@@ -1,9 +1,13 @@
+import os
 import yaml
 
 
 settings_file = "./settings.yaml"
+config_file = "config/program.yaml"
+sql_dir = "sql"
 
-def get_from_config(setting_key: str):
+
+def get_from_settings(setting_key: str):
     try:
         with open(settings_file, "r") as f:
             settings = yaml.safe_load(f)
@@ -11,14 +15,37 @@ def get_from_config(setting_key: str):
 
             return setting
     except Exception as e:
-        raise Exception(f"Could not process settings: {e}")
+        raise Exception(f"Could not get settings item: {setting_key} {e}")
 
 
-def get_exiftool_extensions():
+def get_from_config(config_key: str):
     try:
-        with open("config/exif.yaml", "r") as f:
-            extensions = yaml.safe_load(f)
-            extensions = extensions.get("extension")
-            return extensions
+        with open(config_file, "r") as f:
+            config = yaml.safe_load(f)
+            config = config.get(config_key)
+            return config
     except Exception as e:
-        raise Exception(f"Could not get list of extentions: {e}")
+        raise Exception(f"Could not get config item: {config_key} {e}")
+
+
+def get_queries_folder() -> str:
+    folder = os.path.join(sql_dir, "queries")
+    return folder
+
+
+def get_changes_folder() -> str:
+    folder = os.path.join(sql_dir, "changes")
+    return folder
+
+
+def get_creation_folder() -> str:
+    folder = os.path.join(sql_dir, "tables")
+    return folder
+
+
+def get_extensions_list() -> list:
+    try:
+        extensions = ["".join([".", ext]).lower() for ext in get_from_config("extensions")]
+        return extensions
+    except Exception as e:
+        raise Exception(f"Could not get list of extensions: {e}")

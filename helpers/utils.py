@@ -1,4 +1,5 @@
 import json
+import os
 import re
 from helpers import setup, sqlitedb
 
@@ -13,9 +14,7 @@ def prepare_batch(
         batch_size = config_batch_size
 
     if len(records) >= batch_size or state:
-        conn = sqlitedb.start_query()
-        sqlitedb.insert_many_records(script_name, records, conn)
-        sqlitedb.end_query(conn)
+        sqlitedb.insert_many(script_name, records)
 
         empty_list = list()
         return empty_list
@@ -32,6 +31,42 @@ def check_batch_ready(records: list, batch_size: int = 0) -> bool:
         return False
 
 
+
+def get_creation_scripts() -> list:
+    sql_queries = list()
+    tables_folder = setup.get_creation_folder()
+    for filename in os.listdir(tables_folder):
+        sql_file = read_sql_file(os.path.join(tables_folder, filename))
+        sql_queries.append(sql_file)
+
+    return sql_queries
+
+
+
+def get_change_script(filename: str) -> str:
+    filepath = "".join([setup.get_changes_folder(), filename])
+    sql_file = read_sql_file(filepath)
+    return sql_file
+
+
+
+def get_query_script(filename: str) -> str:
+    filepath = "".join([setup.get_queries_folder(), filename])
+    sql_file = read_sql_file(filepath)
+    return sql_file
+
+
+
+def read_sql_file(filepath: str) -> str:
+    query = str
+    if not filepath.endswith(".sql"):
+        filepath = "".join([filepath, ".sql"])
+
+    with open(filepath) as s:
+        query = s.read()
+    return query
+
+
 def extract_parantheses(filename: str):
     matches = re.search(r"(.*)(\([^)]*\))(\.\S*)", filename)
     return matches
@@ -46,9 +81,7 @@ def restructure_filename(filename: str):
 
 
 def clean_up_filelist():
-    conn = sqlitedb.start_query()
-    sqlitedb.execute_query("delete_filelist_entries", conn)
-    sqlitedb.end_query(conn)
+    sqlitedb.execute_query("delete_filelist_entries")
 
 
 def validate_metadata(file_id: int, contents: dict):

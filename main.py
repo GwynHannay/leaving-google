@@ -5,12 +5,12 @@ from helpers import setup
 
 
 ### BEGIN SETUP
-timezone = setup.get_from_config("timezone")
-db_file = "".join([setup.get_from_config("db_name"), ".db"])
-batch_size = setup.get_from_config("batch_size")
-photos_dir = setup.get_from_config("google_location")
-working_dir = setup.get_from_config("working_location")
-duplicate_locations = setup.get_from_config("duplicate_locations")
+timezone = setup.get_from_settings("timezone")
+db_file = "".join([setup.get_from_settings("db_name"), ".db"])
+batch_size = setup.get_from_settings("batch_size")
+photos_dir = setup.get_from_settings("google_location")
+working_dir = setup.get_from_settings("working_location")
+duplicate_locations = setup.get_from_settings("duplicate_locations")
 
 tz = pytz.timezone(timezone)
 ### END SETUP
@@ -23,5 +23,5 @@ if __name__ == "__main__":
     # program.index_raw_files()
     # program.process_raw_files()
     # program.process_metadata_files()
-    program.process_dates()
+    # program.process_dates()
     program.index_filesystem()
