@@ -6,5 +6,5 @@ WITH json AS (
         AND fi.filename || fi.extension = ?
     WHERE js.id = ?
 )
-INSERT INTO filelist_json
+INSERT INTO json_filelist
 SELECT * FROM json;

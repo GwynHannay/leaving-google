@@ -1,8 +1,6 @@
 DELETE FROM filelist
 WHERE id IN (
-    SELECT id FROM filelist_json
+    SELECT id FROM json_filelist
     UNION
-    SELECT id FROM filelist_edits
-    UNION
-    SELECT id FROM filelist_mp
+    SELECT id FROM excess_filelist
 );

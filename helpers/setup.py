@@ -43,6 +43,14 @@ def get_creation_folder() -> str:
     return folder
 
 
+def get_db() -> str:
+    try:
+        db_name = "".join([get_from_settings("db_name"), ".db"])
+        return db_name
+    except Exception as e:
+        raise Exception(f"Could not get database name: {e}")
+
+
 def get_extensions_list() -> list:
     try:
         extensions = ["".join([".", ext]).lower() for ext in get_from_config("extensions")]

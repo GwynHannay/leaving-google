@@ -1,4 +1,4 @@
-CREATE TABLE filelist_json (
+CREATE TABLE json_filelist (
     id INTEGER PRIMARY KEY,
     folder_id INTEGER NOT NULL,
     filename TEXT NOT NULL,

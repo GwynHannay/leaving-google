@@ -1,4 +1,4 @@
-INSERT INTO filelist_json
+INSERT INTO json_filelist
 SELECT *, ? AS file_id 
 FROM filelist
 WHERE filename = ?

@@ -1,4 +1,4 @@
-CREATE TABLE filelist_mp (
+CREATE TABLE excess_filelist (
     id INTEGER PRIMARY KEY,
     folder_id INTEGER NOT NULL,
     filename TEXT NOT NULL,
