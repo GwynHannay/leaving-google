@@ -8,6 +8,7 @@ token.json
 archive/*
 testing/*
 .vscode/
+notes.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

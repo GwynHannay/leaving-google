@@ -2,14 +2,14 @@ import os
 import yaml
 
 
-settings_file = "./settings.yaml"
-config_file = "config/program.yaml"
-sql_dir = "sql"
+SETTINGS_FILE = "./settings.yaml"
+CONFIG_FILE = "config/program.yaml"
+SQL_DIR = "sql"
 
 
 def get_from_settings(setting_key: str):
     try:
-        with open(settings_file, "r") as f:
+        with open(SETTINGS_FILE, "r") as f:
             settings = yaml.safe_load(f)
             setting = settings.get(setting_key)
 
@@ -20,7 +20,7 @@ def get_from_settings(setting_key: str):
 
 def get_from_config(config_key: str):
     try:
-        with open(config_file, "r") as f:
+        with open(CONFIG_FILE, "r") as f:
             config = yaml.safe_load(f)
             config = config.get(config_key)
             return config
@@ -29,17 +29,17 @@ def get_from_config(config_key: str):
 
 
 def get_queries_folder() -> str:
-    folder = os.path.join(sql_dir, "queries")
+    folder = os.path.join(SQL_DIR, "queries")
     return folder
 
 
 def get_changes_folder() -> str:
-    folder = os.path.join(sql_dir, "changes")
+    folder = os.path.join(SQL_DIR, "changes")
     return folder
 
 
 def get_creation_folder() -> str:
-    folder = os.path.join(sql_dir, "tables")
+    folder = os.path.join(SQL_DIR, "tables")
     return folder
 
 
@@ -53,7 +53,9 @@ def get_db() -> str:
 
 def get_extensions_list() -> list:
     try:
-        extensions = ["".join([".", ext]).lower() for ext in get_from_config("extensions")]
+        extensions = [
+            "".join([".", ext]).lower() for ext in get_from_config("extensions")
+        ]
         return extensions
     except Exception as e:
         raise Exception(f"Could not get list of extensions: {e}")

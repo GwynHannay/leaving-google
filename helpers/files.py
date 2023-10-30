@@ -1,137 +1,102 @@
-import hashlib
-import imagehash
-import os
-import json
-import zipfile
-import numpy as np
-from helpers import setup
-from PIL import Image, ImageFile
+from helpers import setup, filesystem, db, utils, metadata
+
+PHOTOS_DIR = setup.get_from_settings("google_location")
 
 
-ImageFile.LOAD_TRUNCATED_IMAGES = True
+def index_takeout_files():
+    zip_files = [file for file in filesystem.get_files(PHOTOS_DIR, [".zip"])]
 
-def get_files(dir_name: str, extensions: list | None):
-    if extensions:
-        for file in os.scandir(dir_name):
-            if any(file.name.lower().endswith(ext) for ext in extensions):
-                yield file
-    else:
-        for file in os.scandir(dir_name):
-            yield file
+    db_records = list()
+    for zippy in zip_files:
+        db_records.append((zippy.name, zippy.path, zippy.stat().st_size))
+
+    db.insert_many("add_takeout_files", db_records)
 
 
-def get_directory_tree(dir_path: str):
-    for root, dirs, files in os.walk(dir_path):
-        yield (root, dirs)
+def index_folders():
+    db_records = list()
+    insert_sql_file = "add_folders"
+    folders = [dir for dir in filesystem.get_directories(PHOTOS_DIR)]
+    for folder in folders:
+        db_records.append((folder,))
+        db_records = utils.prepare_batch(insert_sql_file, db_records, False)
+    if len(db_records) > 0:
+        utils.prepare_batch(insert_sql_file, db_records, True)
 
 
-def get_directories(dir_path: str):
-    all_dirs = list()
-    folders = [dir for dir in get_directory_tree(dir_path) if len(dir[1]) > 0]
-    for entry in folders:
-        filepaths = [os.path.join(entry[0], folder) for folder in entry[1]]
-        all_dirs.extend(filepaths)
-    
-    for dir in all_dirs:
-        yield dir
-        # for dir in dirs:
-        #     all_dirs.append(os.path.join(root, dir))
-
-    # for file in os.scandir(dir_path):
-    #     if any(file.name.lower().endswith(ext) for ext in extensions):
-    #         return True
-
-def get_image_hash(filepath: str):
-    try:
-        with Image.open(filepath) as im:
-            return imagehash.dhash_vertical(im)
-    except Exception as e:
-        raise Exception(f"Error processing image: {filepath}, {e}")
+def index_files(sql_script: str, extensions: list | None = None):
+    insert_sql_file = "add_filelist"
+    for records, conn in db.begin_batch_updates(sql_script):
+        db_records = None
+        db_records = list()
+        for id, folder in records:
+            actual_files = [
+                file
+                for file in filesystem.get_files(folder, extensions)
+                if file.is_file()
+            ]
+            for file in actual_files:
+                db_records.append(utils.get_file_properties(id, file))
+                if utils.check_batch_ready(db_records):
+                    db.insert_many(insert_sql_file, db_records, conn)
+                    db_records = None
+                    db_records = list()
+        if len(db_records) > 0:
+            db.insert_many(insert_sql_file, db_records, conn)
 
 
-def get_rotated_image_hash(filepath: str, angle: int):
-    with Image.open(filepath) as im:
-        rotated_image = im.rotate(angle)
-        return imagehash.dhash_vertical(rotated_image)
+def move_excess_files(new_dir: str, sql_script: str):
+    i = 0
+    for records, conn in db.begin_batch_updates(sql_script):
+        db_records = None
+        filepaths = None
+        db_records = list()
+        filepaths = list()
+        i = i + 1
+
+        for id, old_filepath in records:
+            new_filepath = old_filepath.replace(PHOTOS_DIR, new_dir)
+            filepaths.append((old_filepath, new_filepath))
+            db_records.append(id)
+
+        print(f"Moving excess files, batch {i}")
+        filesystem.move_files(filepaths)
+        db.update_with_list("add_excess_filelist", db_records, conn)
 
 
-def get_file_size(file) -> str:
-    return file.stat().st_size
+def match_parantheses():
+    for records, conn in db.begin_batch_updates("get_media_with_paranthesis"):
+        db_records = None
+        db_records = list()
+        for id, folder, filename in records:
+            new_filename = utils.restructure_filename(filename)
+            db_records.append((id, new_filename, folder))
+        db.update_with_many_vals("add_json_with_paranthesis", db_records, conn)
+    utils.clean_up_filelist()
 
 
-def get_file_hash(file) -> str:
-    hasher = hashlib.md5()
+def match_json_with_title():
+    for records, conn in db.begin_batch_updates("get_unmatched_json"):
+        db_records = None
+        db_records = list()
 
-    with open(file.path, "rb") as f:
-        buffer = f.read()
-        hasher.update(buffer)
+        for id, filepath in records:
+            result = metadata.read_filename(filepath)
+            db_records.append((result, id))
 
-    return hasher.hexdigest()
-
-
-def split_file_extension(file) -> tuple:
-    return os.path.splitext(file)
-
-
-def extract_files(filepath: str):
-    working_dir = setup.get_from_settings("working_location")
-    with zipfile.ZipFile(filepath, "r") as z:
-        z.extractall(working_dir)
+        db.update_with_many_vals("add_json_using_filenames", db_records, conn)
+    utils.clean_up_filelist()
 
 
-def read_json_file(filepath: str):
-    contents = None
-    with open(filepath, "r") as f:
-        contents = json.loads(f.read())
-
-    return contents
-
-
-def delete_files(filepaths: list):
-    for filepath in filepaths:
-        try:
-            os.remove(filepath)
-        except Exception as e:
-            raise Exception(f"Could not delete file: {filepath} {e}")
-
-
-def move_files(filepaths: list):
-    for original_file, new_file in filepaths:
-        try:
-            os.renames(original_file, new_file)
-        except Exception as e:
-            raise Exception(
-                f"Could not move file: old {original_file} to new {new_file} {e}"
-            )
-
-
-def get_creation_scripts() -> list:
-    sql_queries = list()
-    tables_folder = setup.get_creation_folder()
-    for filename in os.listdir(tables_folder):
-        sql_file = read_sql_file(os.path.join(tables_folder, filename))
-        sql_queries.append(sql_file)
-
-    return sql_queries
-
-
-def get_change_script(filename: str) -> str:
-    filepath = os.path.join(setup.get_changes_folder(), filename)
-    sql_file = read_sql_file(filepath)
-    return sql_file
-
-
-def get_query_script(filename: str) -> str:
-    filepath = os.path.join(setup.get_queries_folder(), filename)
-    sql_file = read_sql_file(filepath)
-    return sql_file
-
-
-def read_sql_file(filepath: str) -> str:
-    query = str
-    if not filepath.endswith(".sql"):
-        filepath = "".join([filepath, ".sql"])
-
-    with open(filepath) as s:
-        query = s.read()
-    return query
+def check_directories(dir_path: str, extensions: list):
+    valid_folders = list()
+    insert_sql_file = "add_folders"
+    folders = [dir for dir in filesystem.get_directories(dir_path)]
+    for folder in folders:
+        for file in filesystem.get_files(folder, extensions):
+            if file.is_file():
+                valid_folders.append((folder,))
+                break
+        valid_folders = utils.prepare_batch(insert_sql_file, valid_folders, False)
+    if len(valid_folders) > 0:
+        utils.prepare_batch(insert_sql_file, valid_folders, True)
