@@ -110,13 +110,31 @@ def update_with_single_val(script_name: str, param: str, db_conn=None):
 def get_records(script_name: str, params=None, batch_size: int = 300):
     conn, query = sqlitedb.begin_query(script_name)
 
-    if isinstance(params, list):
-        query = utils.prepare_list_query(query, params)
-
-    state, result = sqlitedb.execute_without_values(query, conn)
+    if params:
+        state, result = sqlitedb.execute_with_many_values(query, params, conn)
+    else:
+        state, result = sqlitedb.execute_without_values(query, conn)
 
     if not isinstance(result, sqlite3.Cursor):
-        raise Exception(f"Could not run query: {script_name}, {params}")
+        raise Exception(f"Could not run query: {script_name}, {params}, {result}")
+
+    while True:
+        matches = result.fetchmany(batch_size)
+        if matches:
+            yield (matches, conn)
+        else:
+            break
+
+    sqlitedb.finish_query(state, (result, conn))
+
+
+def get_records_with_list(script_name: str, params: list, batch_size: int = 300):
+    conn, raw_query = sqlitedb.begin_query(script_name)
+    query = utils.prepare_list_query(raw_query, params)
+    state, result = sqlitedb.execute_with_values(query, params, conn)
+
+    if not isinstance(result, sqlite3.Cursor):
+        raise Exception(f"Could not run query: {script_name}, {params}, {result}")
 
     while True:
         matches = result.fetchmany(batch_size)
@@ -129,10 +147,15 @@ def get_records(script_name: str, params=None, batch_size: int = 300):
 
 
 def begin_batch_query(script: str, vals=None):
-    for records, conn in get_records(script, vals):
+    for records, conn in get_records(script, params=vals):
+        yield records
+
+
+def begin_batch_query_with_list(script: str, vals: list):
+    for records, conn in get_records_with_list(script, vals):
         yield records
 
 
 def begin_batch_updates(script: str, vals=None):
-    for records in get_records(script, vals):
+    for records in get_records(script, params=vals):
         yield records

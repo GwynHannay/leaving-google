@@ -66,13 +66,14 @@ def process_xmp_files():
     metadata.update_xmp_files()
 
     print("Deleting original XMP files")
-    for id, folder in db.begin_batch_query("get_all_folders"):
-        old_xmps = [
-            file
-            for file in filesystem.get_files(folder, [".xmp_original"])
-            if file.is_file()
-        ]
-        filesystem.delete_files(old_xmps)
+    for records in db.begin_batch_query("get_all_folders"):
+        for id, folder in records:
+            old_xmps = [
+                file
+                for file in filesystem.get_files(folder, [".xmp_original"])
+                if file.is_file()
+            ]
+            filesystem.delete_files(old_xmps)
 
 
 def process_google_photos():

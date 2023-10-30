@@ -1,5 +1,5 @@
-PyExifTool~=0.5.5
-pyyaml~=6.0.1
-pytz~=2023.3
+ImageHash~=4.3.1
 Pillow~=10.0.0
-imagehash~=4.3.1
+PyExifTool~=0.5.5
+pytz~=2023.3
+PyYAML~=6.0.1

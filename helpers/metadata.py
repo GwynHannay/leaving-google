@@ -21,14 +21,14 @@ def get_tz(location: str):
 def generate_xmp_files():
     with exiftool.ExifToolHelper(config_file="config/exiftool.config") as et:
         i = 0
-        for records in db.begin_batch_query("get_media_files", EXTENSIONS):
+        for records in db.begin_batch_query_with_list("get_media_files", EXTENSIONS):
             i = i + 1
             print(f"Generating batch {i}")
             for id, filepath in records:
                 try:
-                    et.execute(f"{filepath[0]}", "-o", "%d%f.%e.xmp")
+                    et.execute(f"{filepath}", "-o", "%d%f.%e.xmp")
                 except Exception as e:
-                    raise Exception(f"Could not process file: {filepath[0]} {e}")
+                    raise Exception(f"Could not process file: {filepath} {e}")
 
 
 def update_xmp_files():
