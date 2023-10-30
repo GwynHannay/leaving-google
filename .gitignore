@@ -1,3 +1,15 @@
+# User files
+*.db
+settings.yaml
+credentials.json
+token.json
+
+# Development files
+archive/*
+testing/*
+.vscode/
+notes.txt
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
