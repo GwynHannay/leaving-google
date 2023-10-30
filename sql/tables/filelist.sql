@@ -4,6 +4,7 @@ CREATE TABLE filelist (
     filename TEXT NOT NULL,
     extension TEXT,
     size INTEGER,
+    hash TEXT,
     FOREIGN KEY(folder_id) REFERENCES folders(id),
     CONSTRAINT files_unique_matches UNIQUE(folder_id, filename, extension)
 );

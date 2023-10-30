@@ -86,3 +86,45 @@ tz_map:
   AUSTRALIA/NEW SOUTH WALES: Australia/NSW
   SINGAPORE: Singapore
   NEW ZEALAND/WELLINGTON: NZ
+tag_priority:
+  0:
+    # Image Height
+    - XMP:ImageHeight
+    - EXIF:ImageHeight
+    - RIFF:ImageHeight
+    - QuickTime:ImageHeight
+    - PNG:ImageHeight
+    - MPEG:ImageHeight
+    - Matroska:ImageHeight
+    - H264:ImageHeight
+    - GIF:ImageHeight
+    - ASF:ImageHeight
+    - Flash:ImageHeight
+    # Image Width
+    - XMP:ImageWidth
+    - EXIF:ImageWidth
+    - RIFF:ImageWidth
+    - QuickTime:ImageWidth
+    - PNG:ImageWidth
+    - MPEG:ImageWidth
+    - Matroska:ImageWidth
+    - H264:ImageWidth
+    - GIF:ImageWidth
+    - ASF:ImageWidth
+    - Flash:ImageWidth
+    # Make / Model
+    - XMP:Make
+    - XMP:Model
+  1:
+    # Image Height
+    - EXIF:ExifImageHeight
+    # Image Width
+    - EXIF:ExifImageWidth
+    # Make / Model
+    - EXIF:Make
+    - EXIF:Model
+  2:
+    # Image Height
+    - File:ImageHeight
+    # Image Width
+    - File:ImageWidth

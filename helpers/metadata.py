@@ -8,6 +8,7 @@ from helpers import setup, sqlitedb
 timezone = setup.get_from_settings("timezone")
 default_tz = pytz.timezone(timezone)
 tz_map = setup.get_from_config("tz_map")
+tag_priority = setup.get_from_config("tag_priority")
 
 extensions = setup.get_extensions_list()
 
@@ -26,7 +27,7 @@ def generate_xmp_files():
         for records in sqlitedb.batch_query_from_list("get_media_files", extensions):
             i = i + 1
             print(f"Generating batch {i}")
-            for filepath in records:
+            for id, filepath in records:
                 try:
                     et.execute(f"{filepath[0]}", "-o", "%d%f.%e.xmp")
                 except Exception as e:
@@ -67,50 +68,56 @@ def get_rdf_sections(filepath: str):
     return sections
 
 
-def get_tags():
+# def get_tags():
+#     with exiftool.ExifToolHelper(config_file="config/exiftool.config") as et:
+#         tags_list = setup.get_from_config("tags")
+#         for records, conn in sqlitedb.batch_updates("get_xmp_files"):
+#             filepaths = [record[1] for record in records]
+#             ids = [record[0] for record in records]
+#             try:
+#                 tags = et.get_tags(filepaths, tags=tags_list, params=[
+#                     "-x", 
+#                     "File:all",
+#                     "-x",
+#                     "Composite:all"
+#                 ])
+#                 weeded_tags = weed_tags(tags, ids)
+#                 sqlitedb.insert_during_batch("add_xmp_data", weeded_tags, conn)
+#             except Exception as e:
+#                 raise Exception(f"Trouble getting tags: {e}")
+
+
+def get_tags(source_script: str):
     with exiftool.ExifToolHelper(config_file="config/exiftool.config") as et:
-        tags_list = setup.get_from_config("tags")
-        for records, conn in sqlitedb.batch_updates("get_xmp_files"):
-            filepaths = [record[1] for record in records]
-            ids = [record[0] for record in records]
-            try:
-                tags = et.get_tags(filepaths, tags=tags_list, params=[
-                    "-x", 
-                    "File:all",
-                    "-x",
-                    "Composite:all"
-                ])
-                weeded_tags = weed_tags(tags, ids)
-                sqlitedb.insert_during_batch("add_xmp_data", weeded_tags, conn)
-            except Exception as e:
-                raise Exception(f"Trouble getting tags: {e}")
+        for records, conn in sqlitedb.batch_updates_from_list(source_script, extensions):
+            # filepaths = [record[1] for record in records]
+            # ids = [record[0] for record in records]
+            weeded_tags = list()
+            for id, filepath in records:
+                try:
+                    tags = et.get_tags(filepath, tags='matchtags')
+                    weeded_tags.extend(weed_tags(tags[0], id))
+                except exiftool.exceptions.ExifToolExecuteError:
+                    print(f"Could not generate tags for file: {filepath}")
+                    continue
+                except Exception as e:
+                    raise Exception(f"Trouble getting tags for this file: {filepath} {e}")
+            sqlitedb.insert_during_batch("add_xmp_data", weeded_tags, conn)
 
 
-def get_all_tags():
-    with exiftool.ExifToolHelper(config_file="config/exiftool.config") as et:
-        for records, conn in sqlitedb.batch_updates("get_xmp_files"):
-            filepaths = [record[1] for record in records]
-            ids = [record[0] for record in records]
-            try:
-                tags = et.get_tags(filepaths, tags=None)
-                weeded_tags = weed_tags(tags, ids)
-                sqlitedb.insert_during_batch("add_xmp_data", weeded_tags, conn)
-            except Exception as e:
-                raise Exception(f"Trouble getting tags: {e}")
-
-
-def weed_tags(tags: list, ids: list):
-    i = 0
+def weed_tags(tags: list, id: int):
     db_records = None
     db_records = list()
-    for file_tags in tags:
-        id = ids[i]
-        for single_tag in file_tags:
-            if single_tag == "SourceFile":
-                continue
-            db_records.append((id, single_tag, str(file_tags[single_tag])))
-        i = i + 1
+    for file_tag in tags:
+        if file_tag == "SourceFile":
+            continue
+        db_records.append((id, file_tag, str(tags[file_tag])))
     return db_records
+
+
+def build_tag_table(source_script: str):
+    sqlitedb.execute_query(source_script)
+    sqlitedb.execute_query("delete_xmp_data")
 
 
 # def db_batch_query(script: str):

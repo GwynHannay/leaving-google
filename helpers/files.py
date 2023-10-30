@@ -1,9 +1,14 @@
+import hashlib
+import imagehash
 import os
 import json
 import zipfile
+import numpy as np
 from helpers import setup
+from PIL import Image, ImageFile
 
 
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 def get_files(dir_name: str, extensions: list | None):
     if extensions:
@@ -15,13 +20,53 @@ def get_files(dir_name: str, extensions: list | None):
             yield file
 
 
-def get_directories(dir_path: str):
+def get_directory_tree(dir_path: str):
     for root, dirs, files in os.walk(dir_path):
         yield (root, dirs)
 
 
+def get_directories(dir_path: str):
+    all_dirs = list()
+    folders = [dir for dir in get_directory_tree(dir_path) if len(dir[1]) > 0]
+    for entry in folders:
+        filepaths = [os.path.join(entry[0], folder) for folder in entry[1]]
+        all_dirs.extend(filepaths)
+    
+    for dir in all_dirs:
+        yield dir
+        # for dir in dirs:
+        #     all_dirs.append(os.path.join(root, dir))
+
+    # for file in os.scandir(dir_path):
+    #     if any(file.name.lower().endswith(ext) for ext in extensions):
+    #         return True
+
+def get_image_hash(filepath: str):
+    try:
+        with Image.open(filepath) as im:
+            return imagehash.dhash_vertical(im)
+    except Exception as e:
+        raise Exception(f"Error processing image: {filepath}, {e}")
+
+
+def get_rotated_image_hash(filepath: str, angle: int):
+    with Image.open(filepath) as im:
+        rotated_image = im.rotate(angle)
+        return imagehash.dhash_vertical(rotated_image)
+
+
 def get_file_size(file) -> str:
     return file.stat().st_size
+
+
+def get_file_hash(file) -> str:
+    hasher = hashlib.md5()
+
+    with open(file.path, "rb") as f:
+        buffer = f.read()
+        hasher.update(buffer)
+
+    return hasher.hexdigest()
 
 
 def split_file_extension(file) -> tuple:
@@ -71,13 +116,13 @@ def get_creation_scripts() -> list:
 
 
 def get_change_script(filename: str) -> str:
-    filepath = "".join([setup.get_changes_folder(), filename])
+    filepath = os.path.join(setup.get_changes_folder(), filename)
     sql_file = read_sql_file(filepath)
     return sql_file
 
 
 def get_query_script(filename: str) -> str:
-    filepath = "".join([setup.get_queries_folder(), filename])
+    filepath = os.path.join(setup.get_queries_folder(), filename)
     sql_file = read_sql_file(filepath)
     return sql_file
 

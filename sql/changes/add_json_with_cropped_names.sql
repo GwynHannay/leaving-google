@@ -1,6 +1,9 @@
 WITH json AS (
     SELECT DISTINCT
-        fi.*,
+		fi.id, 
+		fi.folder_id, 
+		fi.filename, 
+		fi.extension, 
         me.id AS file_id
     FROM filelist fi
     JOIN folders fo ON fi.folder_id = fo.id
@@ -16,7 +19,10 @@ WITH json AS (
         AND fi.filename NOT LIKE '%(%)'
     UNION
     SELECT DISTINCT
-        fi.*,
+		fi.id, 
+		fi.folder_id, 
+		fi.filename, 
+		fi.extension, 
         me.id AS file_id
     FROM filelist fi
     JOIN folders fo ON fi.folder_id = fo.id

@@ -4,5 +4,6 @@ CREATE TABLE excess_filelist (
     filename TEXT NOT NULL,
     extension TEXT,
     size INTEGER,
+    hash TEXT,
     FOREIGN KEY(folder_id) REFERENCES folders(id)
 );

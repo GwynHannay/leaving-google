@@ -1,2 +1,2 @@
-INSERT INTO filelist (folder_id, filename, extension, size)
-VALUES (?, ?, ?, ?);
+INSERT INTO filelist (folder_id, filename, extension, size, hash)
+VALUES (?, ?, ?, ?, ?);

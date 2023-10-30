@@ -3,7 +3,7 @@ import re
 from helpers import files, setup, sqlitedb
 
 
-config_batch_size = setup.get_from_config("batch_size")
+config_batch_size = setup.get_from_settings("batch_size")
 
 
 def prepare_batch(
@@ -33,8 +33,9 @@ def check_batch_ready(records: list, batch_size: int = 0) -> bool:
 def get_file_properties(id, file) -> tuple:
     size = files.get_file_size(file)
     filename, ext = files.split_file_extension(file.name)
+    filehash = files.get_file_hash(file)
 
-    return (id, filename, ext, size)
+    return (id, filename, ext, size, filehash)
 
 
 def extract_parantheses(filename: str):
@@ -48,6 +49,11 @@ def restructure_filename(filename: str):
         split_name = matches.groups()
         new_filename = ''.join([split_name[0], split_name[2], split_name[1]])
         return new_filename
+
+
+def remove_parantheses(filename: str):
+    removed = re.sub(r"\([^)]*\)$", "", filename)
+    return removed.rstrip(" ")
 
 
 def clean_up_filelist():

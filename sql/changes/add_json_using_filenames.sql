@@ -1,5 +1,10 @@
 WITH json AS (
-	SELECT DISTINCT js.*, fi.id AS file_id
+    SELECT DISTINCT 
+        js.id, 
+        js.folder_id, 
+        js.filename, 
+        js.extension, 
+        fi.id AS file_id
     FROM filelist js
     JOIN folders fo ON fo.id = js.folder_id
     JOIN filelist fi ON fi.folder_id = fo.id

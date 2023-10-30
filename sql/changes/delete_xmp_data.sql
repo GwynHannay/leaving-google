@@ -1,0 +1,2 @@
+DELETE FROM xmp_data
+WHERE 1 = 1;

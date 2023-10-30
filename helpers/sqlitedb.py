@@ -48,6 +48,31 @@ def insert_many(script_name: str, records: list):
         raise Exception(f"Could not insert records: {script_name} {records} {e}")
 
 
+def insert_row(script_name: str, record: tuple) -> int:
+    try:
+        conn = start_query()
+        cursor = conn.cursor()
+
+        query = files.get_change_script(script_name)
+        cursor.execute(query, record)
+        conn.commit()
+
+        print("Total", cursor.rowcount, f"records inserted: {script_name}")
+        row_id = cursor.lastrowid
+        cursor.close()
+        end_query(conn)
+        
+        if row_id:
+            return row_id
+        else:
+            return 0
+    except sqlite3.IntegrityError as ie:
+        print(f"Integrity error on insert: {script_name} {record} {ie}")
+        return 0
+    except Exception as e:
+        raise Exception(f"Could not insert records: {script_name} {record} {e}")
+
+
 # def get_results_from_val(script_name: str, param: str) -> list:
 #     try:
 #         conn = start_query()
@@ -62,6 +87,22 @@ def insert_many(script_name: str, records: list):
 #         return matches
 #     except Exception as e:
 #         raise Exception(f"Could not query database: {script_name} {param} {e}")
+
+
+def get_results_from_tuple(script_name: str, params: tuple) -> list:
+    try:
+        conn = start_query()
+        cursor = conn.cursor()
+
+        query = files.get_query_script(script_name)
+        cursor.execute(query, params)
+        matches = cursor.fetchall()
+
+        cursor.close()
+        end_query(conn)
+        return matches
+    except Exception as e:
+        raise Exception(f"Could not query database: {script_name} {params} {e}")
 
 
 def get_all_results(script_name: str) -> list:
