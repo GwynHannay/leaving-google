@@ -159,3 +159,8 @@ def begin_batch_query_with_list(script: str, vals: list):
 def begin_batch_updates(script: str, vals=None):
     for records in get_records(script, params=vals):
         yield records
+
+
+def begin_batch_updates_with_list(script: str, vals: list):
+    for records in get_records_with_list(script, vals):
+        yield records

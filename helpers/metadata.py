@@ -54,7 +54,7 @@ def read_filename(filepath: str):
 
 def get_tags(source_script: str):
     with exiftool.ExifToolHelper(config_file="config/exiftool.config") as et:
-        for records, conn in db.begin_batch_updates(source_script, EXTENSIONS):
+        for records, conn in db.begin_batch_updates_with_list(source_script, EXTENSIONS):
             weeded_tags = list()
             for id, filepath in records:
                 try:

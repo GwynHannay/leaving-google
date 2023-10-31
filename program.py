@@ -2,7 +2,7 @@ import os
 from helpers import files, filesystem, metadata, setup, db, utils, media
 
 
-valid_extensions = setup.get_extensions_list()
+EXTENSIONS = setup.get_extensions_list()
 
 
 def check_db():
@@ -77,8 +77,8 @@ def process_xmp_files():
 
 
 def process_google_photos():
-    for records, conn in db.begin_batch_updates(
-        "get_media", valid_extensions
+    for records, conn in db.begin_batch_updates_with_list(
+        "get_media", EXTENSIONS
     ):
         db_records = build_new_records(records)
         db.insert_many("add_google_photos", db_records, conn)
@@ -90,14 +90,14 @@ def process_google_photos():
 
 def process_original_photos():
     for original in setup.get_from_settings("original_locations"):
-        files.check_directories(original, valid_extensions)
+        files.check_directories(original, EXTENSIONS)
 
-    add_existing_files(valid_extensions)
+    add_existing_files(EXTENSIONS)
 
     db.run_query("update_indexed_status")
 
-    for records, conn in db.begin_batch_updates(
-        "get_media", valid_extensions
+    for records, conn in db.begin_batch_updates_with_list(
+        "get_media", EXTENSIONS
     ):
         db_records = build_new_records(records)
         db.insert_many("add_original_photos", db_records, conn)
