@@ -66,6 +66,6 @@ def compare_image_hashes(google_filepath: str, original_photos: list):
                 if rotated_diff < diff:
                     diff = rotated_diff
                     original_hash = rotated_hash
-        scores.append((photo_id, google_hash, original_hash, diff))
+        scores.append((photo_id, str(google_hash), str(original_hash), diff))
 
     return scores

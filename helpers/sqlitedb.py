@@ -41,7 +41,7 @@ def finish_query(state: str, conn: tuple, msg=None):
         else:
             conn[0].close()
     elif state == FAILURE:
-        raise Exception(msg)
+        raise Exception("msg")
     else:
         raise Exception(f"Unexpected output: {msg}")
 

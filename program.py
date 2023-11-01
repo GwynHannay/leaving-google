@@ -122,6 +122,7 @@ def match_via_tags():
     db.run_query("add_matches_using_cameras")
     db.run_query("add_matches_without_cameras")
     db.run_query("add_matches_using_names")
+    db.run_query("add_matches_from_duplicates")
 
 
 def build_new_records(records: list):
