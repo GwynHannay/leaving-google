@@ -9,4 +9,4 @@ if __name__ == "__main__":
     program.process_xmp_files()
     program.process_google_photos()
     program.process_original_photos()
-    program.process_matching_photos()
+    # program.process_matching_photos()

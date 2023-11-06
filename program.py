@@ -32,13 +32,14 @@ def process_extracted_files():
 
     db.run_query("update_indexed_status")
 
+    files.move_excess_files(setup.get_from_settings("edited_location"), "get_edits")
     files.move_excess_files(
         setup.get_from_settings("dupe_location"), "get_google_dupes"
     )
-    files.move_excess_files(setup.get_from_settings("edited_location"), "get_edits")
     files.move_excess_files(setup.get_from_settings("mp_location"), "get_mp_files")
 
     utils.clean_up_filelist()
+    files.rename_edited_files("get_originals_of_edits")
 
 
 def process_json_files():
@@ -129,16 +130,12 @@ def build_new_records(records: list):
     try:
         new_records = list()
         for record in records:
-            sans_parans = utils.remove_parantheses(record[2])
-            if sans_parans:
-                distinct_name = sans_parans
-            else:
-                distinct_name = record[2]
+            distinct_name = files.clean_filename(record[2])
 
             new_records.append(record + (distinct_name,))
         return new_records
     except Exception as e:
-        raise Exception(f"Trouble creating record for Google Photos: {records} {e}")
+        raise Exception(f"Trouble creating new record for photos: {records} {e}")
 
 
 def add_existing_files(extensions: list | None = None):

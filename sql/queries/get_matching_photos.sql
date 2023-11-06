@@ -9,6 +9,6 @@ JOIN google_photos gp ON gp.id = mt.google_id
 JOIN original_photos op ON op.id = mt.original_id
 JOIN folders gfo ON gfo.id = gp.folder_id
 JOIN folders ofo ON ofo.id = op.folder_id
-WHERE UPPER(gp.extension) NOT IN ('.3GP', '.AVI', '.FLV', '.INSV', '.M2TS', '.MKV', '.MOV', '.MP4', '.MPG', '.MTS', '.WEBM', '.WMV')
-	AND similarity IS NULL
+WHERE mt.google_id IN (12714, 49158, 49190)
+-- 	WHERE similarity_one IS NULL
 ORDER BY 2, 4;

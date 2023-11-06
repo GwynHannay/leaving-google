@@ -1,9 +1,11 @@
+import cv2
 import hashlib
 import imagehash
 import os
 import zipfile
 from helpers import setup
 from PIL import Image, ImageFile
+from skimage.metrics import structural_similarity as ssim
 
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
@@ -35,10 +37,38 @@ def get_directory_tree(dir_path: str):
         yield (root, dirs)
 
 
+def rotate_frame_left(frame):
+    return cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
+
+
+def rotate_frame_right(frame):
+    return cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
+
+
+def rotate_frame_180(frame):
+    return cv2.rotate(frame, cv2.ROTATE_180)
+
+
+def resize_frame(frame):
+    return cv2.resize(frame, (500, 500))
+
+
+def convert_to_grayscale(frame):
+    return cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+
+def get_similarity(google_frame, original_frame):
+    return ssim(google_frame, original_frame)
+
+
+def get_media_contents(filepath: str):
+    return cv2.VideoCapture(filepath)
+
+
 def get_image_hash(filepath: str):
     try:
         with Image.open(filepath) as im:
-            return imagehash.dhash_vertical(im)
+            return imagehash.phash_simple(im)
     except Exception as e:
         raise Exception(f"Error processing image: {filepath}, {e}")
 
@@ -46,7 +76,7 @@ def get_image_hash(filepath: str):
 def get_rotated_image_hash(filepath: str, angle: int):
     with Image.open(filepath) as im:
         rotated_image = im.rotate(angle)
-        return imagehash.dhash_vertical(rotated_image)
+        return imagehash.average_hash(rotated_image)
 
 
 def get_file_size(file) -> str:
@@ -89,6 +119,13 @@ def move_files(filepaths: list):
             raise Exception(
                 f"Could not move file: old {original_file} to new {new_file} {e}"
             )
+
+
+def rename_file(old_name: str, new_name: str):
+    try:
+        os.rename(old_name, new_name)
+    except Exception as e:
+        raise Exception(f"Could not rename file from {old_name} to {new_name}: {e}")
 
 
 def get_creation_scripts() -> list:

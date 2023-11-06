@@ -64,6 +64,18 @@ def move_excess_files(new_dir: str, sql_script: str):
         db.update_with_list("add_excess_filelist", db_records, conn)
 
 
+def rename_edited_files(sql_script: str):
+    for records, conn in db.begin_batch_updates(sql_script):
+        db_records = list()
+        for id, filename, filepath in records:
+            new_filename = filename.replace("-edited", "")
+            new_filepath = filepath.replace("-edited", "")
+            filesystem.rename_file(filepath, new_filepath)
+            db_records.append((new_filename, id))
+        
+        db.update_with_many_vals("update_filenames", db_records, conn)
+
+
 def match_parantheses():
     for records, conn in db.begin_batch_updates("get_media_with_paranthesis"):
         db_records = None
@@ -100,3 +112,12 @@ def check_directories(dir_path: str, extensions: list):
         valid_folders = utils.prepare_batch(insert_sql_file, valid_folders, False)
     if len(valid_folders) > 0:
         utils.prepare_batch(insert_sql_file, valid_folders, True)
+
+
+def clean_filename(filename: str):
+    sans_parans = utils.remove_parantheses(filename)
+
+    if sans_parans:
+        filename = sans_parans
+    
+    return filename.replace("-edited", "")
