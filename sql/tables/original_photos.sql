@@ -9,8 +9,10 @@ CREATE TABLE original_photos (
     duplicate_of_original_id INTEGER,
     duplicate_of_google_id INTEGER,
     searched TEXT,
+    new_folder_id INTEGER,
     FOREIGN KEY(folder_id) REFERENCES folders(id),
     FOREIGN KEY(duplicate_of_original_id) REFERENCES original_photos(id),
     FOREIGN KEY(duplicate_of_google_id) REFERENCES google_photos(id),
+    FOREIGN KEY(new_folder_id) REFERENCES folders(id),
     CONSTRAINT files_unique_matches UNIQUE(folder_id, filename, extension)
 );

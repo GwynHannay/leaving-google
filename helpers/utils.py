@@ -1,8 +1,16 @@
 import re
+import os
 from helpers import filesystem, setup, db
 
 
 CONFIG_BATCH_SIZE = setup.get_from_settings("batch_size")
+
+
+def init_db():
+    db_file = setup.get_db()
+    if not os.path.exists(db_file):
+        print("Creating SQLite database and tables")
+        db.create_db()
 
 
 def prepare_batch(
@@ -37,19 +45,6 @@ def get_file_properties(id, file) -> tuple:
     return (id, filename, ext, size, filehash)
 
 
-def extract_parantheses(filename: str):
-    matches = re.search(r"(.*)(\([^)]*\))(\.\S*)", filename)
-    return matches
-
-
-def restructure_filename(filename: str):
-    matches = extract_parantheses(filename)
-    if matches:
-        split_name = matches.groups()
-        new_filename = "".join([split_name[0], split_name[2], split_name[1]])
-        return new_filename
-
-
 def remove_parantheses(filename: str):
     removed = re.sub(r"\([^)]*\)$", "", filename)
     return removed.rstrip(" ")
@@ -57,9 +52,3 @@ def remove_parantheses(filename: str):
 
 def clean_up_filelist():
     db.run_query("delete_filelist_entries")
-
-
-def prepare_list_query(raw_query: str, records: list):
-    list_placeholders = ",".join(["?"] * len(records))
-    query = raw_query % list_placeholders
-    return query

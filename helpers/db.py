@@ -31,8 +31,8 @@ def insert_many(script_name: str, records: list, db_conn=None):
     sqlitedb.finish_query(state, (result, conn), msg)
 
 
-def insert_row(script_name: str, record: tuple) -> int:
-    conn, query = sqlitedb.begin_change(script_name)
+def insert_row(script_name: str, record: tuple, db_conn=None) -> int:
+    conn, query = sqlitedb.begin_change(script_name, db_conn)
     state, result = sqlitedb.execute_with_values(query, record, conn)
 
     row_id = None
@@ -41,6 +41,9 @@ def insert_row(script_name: str, record: tuple) -> int:
         row_id = result.lastrowid
     else:
         msg = f"Inserting row failed: {script_name}, {record}, {result}"
+    
+    if db_conn:
+        conn = 0
 
     if not row_id:
         row_id = 0
@@ -63,7 +66,7 @@ def run_query(script_name: str):
 
 def update_with_list(script_name: str, records: list, db_conn=None):
     conn, raw_query = sqlitedb.begin_change(script_name, db_conn)
-    query = utils.prepare_list_query(raw_query, records)
+    query = prepare_list_query(raw_query, records)
     state, result = sqlitedb.execute_with_values(query, records, conn)
 
     if isinstance(result, sqlite3.Cursor):
@@ -130,7 +133,7 @@ def get_records(script_name: str, params=None, batch_size: int = 300):
 
 def get_records_with_list(script_name: str, params: list, batch_size: int = 300):
     conn, raw_query = sqlitedb.begin_query(script_name)
-    query = utils.prepare_list_query(raw_query, params)
+    query = prepare_list_query(raw_query, params)
     state, result = sqlitedb.execute_with_values(query, params, conn)
 
     if not isinstance(result, sqlite3.Cursor):
@@ -146,13 +149,19 @@ def get_records_with_list(script_name: str, params: list, batch_size: int = 300)
     sqlitedb.finish_query(state, (result, conn))
 
 
+def prepare_list_query(raw_query: str, records: list):
+    list_placeholders = ",".join(["?"] * len(records))
+    query = raw_query % list_placeholders
+    return query
+
+
 def begin_batch_query(script: str, vals=None):
-    for records, conn in get_records(script, params=vals):
+    for records, __ in get_records(script, params=vals):
         yield records
 
 
 def begin_batch_query_with_list(script: str, vals: list):
-    for records, conn in get_records_with_list(script, vals):
+    for records, __ in get_records_with_list(script, vals):
         yield records
 
 

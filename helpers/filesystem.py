@@ -1,11 +1,10 @@
-import cv2
 import hashlib
 import imagehash
 import os
+import shutil
 import zipfile
 from helpers import setup
 from PIL import Image, ImageFile
-from skimage.metrics import structural_similarity as ssim
 
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
@@ -22,7 +21,7 @@ def get_files(dir_name: str, extensions: list | None):
 
 
 def get_directories(dir_path: str):
-    all_dirs = list()
+    all_dirs = []
     folders = [dir for dir in get_directory_tree(dir_path) if len(dir[1]) > 0]
     for entry in folders:
         filepaths = [os.path.join(entry[0], folder) for folder in entry[1]]
@@ -33,42 +32,14 @@ def get_directories(dir_path: str):
 
 
 def get_directory_tree(dir_path: str):
-    for root, dirs, files in os.walk(dir_path):
+    for root, dirs, __ in os.walk(dir_path):
         yield (root, dirs)
-
-
-def rotate_frame_left(frame):
-    return cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
-
-
-def rotate_frame_right(frame):
-    return cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
-
-
-def rotate_frame_180(frame):
-    return cv2.rotate(frame, cv2.ROTATE_180)
-
-
-def resize_frame(frame):
-    return cv2.resize(frame, (500, 500))
-
-
-def convert_to_grayscale(frame):
-    return cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
-
-def get_similarity(google_frame, original_frame):
-    return ssim(google_frame, original_frame)
-
-
-def get_media_contents(filepath: str):
-    return cv2.VideoCapture(filepath)
 
 
 def get_image_hash(filepath: str):
     try:
         with Image.open(filepath) as im:
-            return imagehash.phash_simple(im)
+            return imagehash.dhash(im)
     except Exception as e:
         raise Exception(f"Error processing image: {filepath}, {e}")
 
@@ -76,7 +47,7 @@ def get_image_hash(filepath: str):
 def get_rotated_image_hash(filepath: str, angle: int):
     with Image.open(filepath) as im:
         rotated_image = im.rotate(angle)
-        return imagehash.average_hash(rotated_image)
+        return imagehash.dhash(rotated_image)
 
 
 def get_file_size(file) -> str:
@@ -121,6 +92,16 @@ def move_files(filepaths: list):
             )
 
 
+def copy_files(filepaths: list):
+    for original_file, new_file in filepaths:
+        try:
+            shutil.copy2(original_file, new_file)
+        except Exception as e:
+            raise Exception(
+                f"Could not copy file from {original_file} to {new_file} {e}"
+            )
+
+
 def rename_file(old_name: str, new_name: str):
     try:
         os.rename(old_name, new_name)
@@ -129,7 +110,7 @@ def rename_file(old_name: str, new_name: str):
 
 
 def get_creation_scripts() -> list:
-    sql_queries = list()
+    sql_queries = []
     tables_folder = setup.get_creation_folder()
     for filename in os.listdir(tables_folder):
         sql_file = read_sql_file(os.path.join(tables_folder, filename))
